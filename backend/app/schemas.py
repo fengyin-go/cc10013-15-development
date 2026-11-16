@@ -244,3 +244,29 @@ class ExportEntry(BaseModel):
     field_5: str | None = None  # 频率限制
     field_6: str | None = None  # 加密开关
     field_7: str | None = None  # 完整性校验
+
+
+class CredentialWindowEntry(BaseModel):
+    """凭据生效数据集窗口明细结构。"""
+
+    field_0: str | None = None  # 凭证编号
+    field_1: str | None = None  # 引用端点
+    field_2: str | None = None  # 端点角色
+    field_3: str | None = None  # 旧指纹
+    field_4: str | None = None  # 新指纹
+    field_5: str | None = None  # 生效开始
+    field_6: str | None = None  # 生效结束
+    field_7: str | None = None  # 轮换状态
+
+
+class EndpointExceptionEntry(BaseModel):
+    """端点异常待处理清单明细结构。"""
+
+    field_0: str | None = None  # 异常编号
+    field_1: str | None = None  # 凭证编号
+    field_2: str | None = None  # 引用端点
+    field_3: str | None = None  # 关联指纹
+    field_4: str | None = None  # 异常原因
+    field_5: str | None = None  # 上报账号
+    field_6: str | None = None  # 处理状态
+    field_7: str | None = None  # 发生时间

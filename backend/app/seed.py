@@ -1,7 +1,90 @@
 """示例数据：每个模块给几条不同状态的记录，方便起服务后立刻看到内容。"""
 from __future__ import annotations
 
+import hashlib
 from typing import Any
+
+
+def _fingerprint(secret: str) -> str:
+    return f"sha256:{hashlib.sha256(secret.encode('utf-8')).hexdigest()[:16]}"
+
+
+# 凭据生效数据集的演示时间轴：今天 2026-11-16 正处于 AUTH-0001 的轮换重叠窗口内。
+_FP_OLD_0001 = _fingerprint("secret-auth0001-old")
+_FP_NEW_0001 = _fingerprint("secret-auth0001-new")
+_FP_0002 = _fingerprint("secret-auth0002")
+_FP_0003 = _fingerprint("secret-auth0003")
+
+CREDENTIAL_SEED: list[dict[str, Any]] = [
+    # AUTH-0001：主端点 + 备用端点，各自带着同一对新旧指纹与重叠有效窗口（轮换中）。
+    {"id": 1, "凭证编号": "AUTH-0001", "引用端点": "EP-PRIMARY-01", "端点角色": "主端点",
+     "旧指纹": _FP_OLD_0001, "新指纹": _FP_OLD_0001,
+     "生效开始": "2026-11-01T00:00:00", "生效结束": "2026-11-18T00:00:00",
+     "轮换状态": "轮换中-旧指纹", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": False, "status": "已生效", "pending": True, "abnormal": False},
+    {"id": 2, "凭证编号": "AUTH-0001", "引用端点": "EP-PRIMARY-01", "端点角色": "主端点",
+     "旧指纹": _FP_OLD_0001, "新指纹": _FP_NEW_0001,
+     "生效开始": "2026-11-15T00:00:00", "生效结束": "2026-11-30T00:00:00",
+     "轮换状态": "轮换中-新指纹", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": False, "status": "已生效", "pending": True, "abnormal": False},
+    {"id": 3, "凭证编号": "AUTH-0001", "引用端点": "EP-STANDBY-01", "端点角色": "备用端点",
+     "旧指纹": _FP_OLD_0001, "新指纹": _FP_OLD_0001,
+     "生效开始": "2026-11-01T00:00:00", "生效结束": "2026-11-18T00:00:00",
+     "轮换状态": "轮换中-旧指纹", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": False, "status": "已生效", "pending": True, "abnormal": False},
+    {"id": 4, "凭证编号": "AUTH-0001", "引用端点": "EP-STANDBY-01", "端点角色": "备用端点",
+     "旧指纹": _FP_OLD_0001, "新指纹": _FP_NEW_0001,
+     "生效开始": "2026-11-15T00:00:00", "生效结束": "2026-11-30T00:00:00",
+     "轮换状态": "轮换中-新指纹", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": False, "status": "已生效", "pending": True, "abnormal": False},
+    # AUTH-0002：单一生效窗口，主备端点同指纹，无冲突。
+    {"id": 5, "凭证编号": "AUTH-0002", "引用端点": "EP-PRIMARY-02", "端点角色": "主端点",
+     "旧指纹": "", "新指纹": _FP_0002,
+     "生效开始": "2026-11-10T00:00:00", "生效结束": "2026-12-10T00:00:00",
+     "轮换状态": "窗口生效", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": False, "status": "已生效", "pending": True, "abnormal": False},
+    {"id": 6, "凭证编号": "AUTH-0002", "引用端点": "EP-STANDBY-02", "端点角色": "备用端点",
+     "旧指纹": "", "新指纹": _FP_0002,
+     "生效开始": "2026-11-10T00:00:00", "生效结束": "2026-12-10T00:00:00",
+     "轮换状态": "窗口生效", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": False, "status": "已生效", "pending": True, "abnormal": False},
+    # AUTH-0003：窗口已过期，采集端取不到可用凭据，用于演示异常入清单。
+    {"id": 7, "凭证编号": "AUTH-0003", "引用端点": "EP-PRIMARY-03", "端点角色": "主端点",
+     "旧指纹": "", "新指纹": _FP_0003,
+     "生效开始": "2026-10-01T00:00:00", "生效结束": "2026-11-01T00:00:00",
+     "轮换状态": "窗口关闭", "授权账号": "acct-operator",
+     "归属范围": "EP-PRIMARY-01、EP-STANDBY-01、EP-PRIMARY-02、EP-STANDBY-02、EP-PRIMARY-03",
+     "优先级规则": "new-first", "失败窗口": True, "status": "已失效", "pending": False, "abnormal": True},
+]
+
+RULE_CONFIG_SEED: list[dict[str, Any]] = [
+    {"id": 1, "规则键": "rotation_priority", "规则值": "new-first", "更新时间": "2026-11-15T09:00:00"},
+]
+
+ACCESS_LOG_SEED: list[dict[str, Any]] = [
+    {"id": 1, "凭证编号": "AUTH-0001", "引用端点": "EP-PRIMARY-01", "调用账号": "acct-operator",
+     "绑定指纹": _FP_NEW_0001, "取用结果": "已取用", "认证结果": "成功", "处理状态": "已确认成功",
+     "备注": "主端点在授权窗口内取用新指纹", "取用时间": "2026-11-16T09:00:00",
+     "pending": False, "abnormal": False},
+    {"id": 2, "凭证编号": "AUTH-0001", "引用端点": "EP-STANDBY-01", "调用账号": "acct-operator",
+     "绑定指纹": _FP_NEW_0001, "取用结果": "已取用", "认证结果": "待回报", "处理状态": "待认证回报",
+     "备注": "备用端点复测，与主端点相同指纹", "取用时间": "2026-11-16T09:05:00",
+     "pending": True, "abnormal": False},
+]
+
+EXCEPTION_SEED: list[dict[str, Any]] = [
+    {"id": 1, "异常编号": "EXC-0001", "凭证编号": "AUTH-0003", "引用端点": "EP-PRIMARY-03",
+     "关联指纹": _FP_0003, "关联日志": None, "异常原因": "凭据窗口已过期，采集端找不到可用凭据",
+     "上报账号": "acct-operator", "处理状态": "待处理", "发生时间": "2026-11-16T08:30:00",
+     "pending": True, "abnormal": True},
+]
+
 
 SEED_ROWS: dict[str, list[dict[str, Any]]] = {
     "endpoint": [{'id': 1,
@@ -651,5 +734,9 @@ SEED_ROWS: dict[str, list[dict[str, Any]]] = {
   '传输协议': '数据导出样例3',
   '频率限制': '数据导出样例3',
   '加密开关': '数据导出样例3',
-  '完整性校验': '数据导出样例3'}]
+  '完整性校验': '数据导出样例3'}],
+    "credential": CREDENTIAL_SEED,
+    "rule_config": RULE_CONFIG_SEED,
+    "credential_access_log": ACCESS_LOG_SEED,
+    "endpoint_exception": EXCEPTION_SEED,
 }
